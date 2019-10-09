@@ -51,6 +51,13 @@ void sr_init(struct sr_instance* sr)
 
 } /* -- sr_init -- */
 
+void cpy_array(unsigned char* src, unsigned char* dest, int src_len){
+    int i;
+    for (i = 0; i < src_len; i ++) {
+        src[i] = dest[i];
+    }
+}
+
 /*---------------------------------------------------------------------
  * Method: sr_handlepacket(uint8_t* p,char* interface)
  * Scope:  Global
@@ -94,10 +101,10 @@ void sr_handlepacket(struct sr_instance* sr,
                     assert(response);
                     memcpy(ahdr, response, sizeof(sr_arp_hdr_t));
                     response->ar_op = arp_op_reply;
-                    strcpy(response->ar_sha, ahdr->ar_tha);
-                    strcpy(response->ar_sip, ahdr->ar_tip);
-                    strcpy(response->ar_tha, ahdr->ar_sha);
-                    strcpy(response->ar_tip, ahdr->ar_sip);
+                    cpy_array(*(response->ar_sha), *(ahdr->ar_tha), ETHER_ADDR_LEN);
+                    response->ar_sip = ahdr->ar_tip;
+                    cpy_array(*(response->ar_tha), *(ahdr->ar_sha), ETHER_ADDR_LEN);
+                    response->ar_tip = ahdr->ar_sip;
                     sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t), interface);
                 }
                 else if (ntohs(ahdr->ar_op) == arp_op_reply) {
