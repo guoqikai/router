@@ -101,9 +101,9 @@ void sr_handlepacket(struct sr_instance* sr,
                     assert(response);
                     memcpy(ahdr, response, sizeof(sr_arp_hdr_t));
                     response->ar_op = arp_op_reply;
-                    cpy_array(*(response->ar_sha), *(ahdr->ar_tha), ETHER_ADDR_LEN);
+                    cpy_array(response->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
                     response->ar_sip = ahdr->ar_tip;
-                    cpy_array(*(response->ar_tha), *(ahdr->ar_sha), ETHER_ADDR_LEN);
+                    cpy_array(response->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
                     response->ar_tip = ahdr->ar_sip;
                     sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t), interface);
                 }
