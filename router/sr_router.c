@@ -76,8 +76,24 @@ void sr_handlepacket(struct sr_instance* sr,
   assert(packet);
   assert(interface);
 
-  printf("*** -> Received packet of length %d \n",len);
-
+  int i = 0;
+  if (len < sizeof(sr_ethernet_hdr_t)) {
+	fprintf(stderr, "packet size is less than the minimum size");
+	return;
+  }
+  print_hdr_eth(packet);
+  sr_ethernet_hdr_t *ehdr = (sr_ethernet_hdr_t *) packet;
+  if (ntohs(ehdr->ether_type) == ethertype_arp) {
+  	printf("*** -> Received ARP packet of length %d \n",len);
+	
+  }
+  else if (ntohs(ehdr->ether_type) == ethertype_ip) {
+	printf("*** -> Received IP packet of length %d \n",len);
+  }
+  else {
+	fprintf(stderr, "unkonwn packet type\n");
+  }
+  return;
   /* fill in code here */
 
 }/* end sr_ForwardPacket */
