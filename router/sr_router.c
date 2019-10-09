@@ -106,6 +106,7 @@ void sr_handlepacket(struct sr_instance* sr,
                     cpy_array(response->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
                     response->ar_tip = ahdr->ar_sip;
                     sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t), interface);
+                    free(response);
                 }
                 else if (ntohs(ahdr->ar_op) == arp_op_reply) {
                     printf("reply for me\n");
