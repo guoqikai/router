@@ -13,7 +13,8 @@
 
 #include <stdio.h>
 #include <assert.h>
-
+#include <stdlib.h>
+#include <string.h>
 
 #include "sr_if.h"
 #include "sr_rt.h"
@@ -87,7 +88,21 @@ void sr_handlepacket(struct sr_instance* sr,
         struct sr_if* itf = sr->if_list;
         while (itf != NULL) {
             if (itf->ip == ahdr->ar_tip) {
-                printf("for me\n");
+                if (ntohs(ahdr->ar_op) == arp_op_request) {
+                    printf("request for me\n");
+                    sr_arp_hdr_t *response = (sr_arp_hdr_t*)malloc(sizeof(sr_arp_hdr_t));
+                    assert(response);
+                    memcpy(ahdr, response, sizeof(sr_arp_hdr_t));
+                    response->ar_op = arp_op_reply;
+                    strcpy(response->ar_sha, ahdr->ar_tha);
+                    strcpy(response->ar_sip, ahdr->ar_tip);
+                    strcpy(response->ar_tha, ahdr->ar_sha);
+                    strcpy(response->ar_tip, ahdr->ar_sip);
+                    sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t), interface);
+                }
+                else if (ntohs(ahdr->ar_op) == arp_op_reply) {
+                    printf("reply for me\n");
+                }
                 break;
             }
         }
