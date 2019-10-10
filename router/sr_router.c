@@ -51,13 +51,6 @@ void sr_init(struct sr_instance* sr)
 
 } /* -- sr_init -- */
 
-void cpy_array(unsigned char* src, unsigned char* dest, int src_len){
-    int i;
-    for (i = 0; i < src_len; i ++) {
-        src[i] = dest[i];
-    }
-}
-
 uint8_t* build_ether_packet(unsigned int len, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type) {
     uint8_t* packet = (uint8_t*)malloc(sizeof(sr_ethernet_hdr_t) + len);
     assert(packet);
@@ -100,27 +93,25 @@ void sr_handlepacket(struct sr_instance* sr,
     }
     sr_ethernet_hdr_t *ehdr = (sr_ethernet_hdr_t *) packet;
     if (ntohs(ehdr->ether_type) == ethertype_arp) {
+        if (len - sizeof(sr_ethernet_hdr_t) < 0) {
+            fprintf(stderr, "incomplete ARP packet\n");
+            return;
+        }
         printf("*** -> Received ARP packet of length %lu from %s\n",len - sizeof(sr_ethernet_hdr_t), interface);
         sr_arp_hdr_t* ahdr = (sr_arp_hdr_t *) (packet + sizeof(sr_ethernet_hdr_t));
         if (ntohs(ahdr->ar_op) == arp_op_request) {
-            printf("request\n");
             struct sr_if* itf = sr_get_interface(sr, interface);
-            if (itf->ip == ahdr->ar_tip) {
-                uint8_t *response = build_ether_packet(sizeof(sr_arp_hdr_t),  ehdr->ether_shost, itf->addr, ethertype_arp);
-                assert(response);
-                memcpy(response + sizeof(sr_ethernet_hdr_t), ahdr, sizeof(sr_arp_hdr_t));
-                sr_arp_hdr_t* response_ahdr = (sr_arp_hdr_t*) (response + sizeof(sr_ethernet_hdr_t));
+            uint8_t *response = build_ether_packet(sizeof(sr_arp_hdr_t),  ehdr->ether_shost, itf->addr, ethertype_arp);
+            assert(response);
+            memcpy(response + sizeof(sr_ethernet_hdr_t), ahdr, sizeof(sr_arp_hdr_t));
+            sr_arp_hdr_t* response_ahdr = (sr_arp_hdr_t*) (response + sizeof(sr_ethernet_hdr_t));
                 response_ahdr->ar_op = htons(arp_op_reply);
-                cpy_array(response_ahdr->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
-                response_ahdr->ar_sip = ahdr->ar_tip;
-                cpy_array(response_ahdr->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
-                response_ahdr->ar_tip = ahdr->ar_sip;
-                sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), interface);
-                free(response);
-            }
-            else {
-                printf("not for me");
-            }
+            memcpy(response_ahdr->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
+            response_ahdr->ar_sip = ahdr->ar_tip;
+            memcpy(response_ahdr->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
+            response_ahdr->ar_tip = ahdr->ar_sip;
+            sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), interface);
+            free(response);
         }
         else if (ntohs(ahdr->ar_op) == arp_op_reply) {
             printf("reply for me\n");
@@ -130,7 +121,13 @@ void sr_handlepacket(struct sr_instance* sr,
         }
     }
     else if (ntohs(ehdr->ether_type) == ethertype_ip) {
-        printf("*** -> Received IP packet of length %d \n",len);
+        if (len - sizeof(sr_ip_hdr_t) < 0) {
+            fprintf(stderr, "incomplete IP packet\n");
+            return;
+        }
+        sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
+        printf("*** -> Received IP packet of length %d \n", len - sizeof(sr_ethernet_hdr_t));
+        
     }
     else {
         fprintf(stderr, "unkonwn packet type\n");
