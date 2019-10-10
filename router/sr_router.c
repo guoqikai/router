@@ -58,6 +58,17 @@ void cpy_array(unsigned char* src, unsigned char* dest, int src_len){
     }
 }
 
+uint8_t* build_ether_packet(unsigned int len, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type) {
+    uint8_t* packet = (uint8_t*)malloc(sizeof(sr_ethernet_hdr_t) + len);
+    assert(packet);
+    memset(packet, 0, sizeof(sr_ethernet_hdr_t) + len);
+    sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet;
+    ehdr->ether_type = type;
+    memcpy(ehdr->ether_dhost, ether_dhost, ETHER_ADDR_LEN);
+    memcpy(ehdr->ether_shost, ether_shost, ETHER_ADDR_LEN);
+    return packet;
+}
+
 /*---------------------------------------------------------------------
  * Method: sr_handlepacket(uint8_t* p,char* interface)
  * Scope:  Global
@@ -97,14 +108,15 @@ void sr_handlepacket(struct sr_instance* sr,
             if (itf->ip == ahdr->ar_tip) {
                 if (ntohs(ahdr->ar_op) == arp_op_request) {
                     printf("request for me\n");
-                    sr_arp_hdr_t *response = (sr_arp_hdr_t*)malloc(sizeof(sr_arp_hdr_t));
+                    uint8_t *response = build_ether_packet(sizeof(sr_arp_hdr_t),  ehdr->ether_shost, itf->addr, arp_op_reply);
                     assert(response);
-                    memcpy(ahdr, response, sizeof(sr_arp_hdr_t));
-                    response->ar_op = arp_op_reply;
-                    cpy_array(response->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
-                    response->ar_sip = ahdr->ar_tip;
-                    cpy_array(response->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
-                    response->ar_tip = ahdr->ar_sip;
+                    memcpy(response + sizeof(sr_ethernet_hdr_t), ahdr, sizeof(sr_arp_hdr_t));
+                    sr_arp_hdr_t* response_ahdr = (sr_arp_hdr_t*) (*response + sizeof(sr_ethernet_hdr_t));
+                    response_ahdr->ar_op = arp_op_reply;
+                    cpy_array(response_ahdr->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
+                    response_ahdr->ar_sip = ahdr->ar_tip;
+                    cpy_array(response_ahdr->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
+                    response_ahdr->ar_tip = ahdr->ar_sip;
                     sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t), interface);
                     free(response);
                 }
