@@ -126,8 +126,12 @@ void sr_handlepacket(struct sr_instance* sr,
             return;
         }
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-        printf("*** -> Received IP packet of length %d \n", len - sizeof(sr_ethernet_hdr_t));
-        
+        printf("*** -> Received IP packet of length %lu \n", len - sizeof(sr_ethernet_hdr_t));
+        if (!(cksum(ihdr, len - sizeof(sr_ethernet_hdr_t)) + ihdr->ip_sum)){
+            fprintf(stderr, "IP packet has incorrect check sum\n");
+            return;
+        }
+        printf("0k\n");
     }
     else {
         fprintf(stderr, "unkonwn packet type\n");
