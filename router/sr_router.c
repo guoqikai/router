@@ -104,23 +104,22 @@ void sr_handlepacket(struct sr_instance* sr,
         sr_arp_hdr_t* ahdr = (sr_arp_hdr_t *) (packet + sizeof(sr_ethernet_hdr_t));
         if (ntohs(ahdr->ar_op) == arp_op_request) {
             printf("request\n");
-            struct sr_if* itf = sr->if_list;
-            while (itf != NULL) {
-                if (itf->ip == ahdr->ar_tip) {
-                    uint8_t *response = build_ether_packet(sizeof(sr_arp_hdr_t),  ehdr->ether_shost, itf->addr, ethertype_arp);
-                    assert(response);
-                    memcpy(response + sizeof(sr_ethernet_hdr_t), ahdr, sizeof(sr_arp_hdr_t));
-                    sr_arp_hdr_t* response_ahdr = (sr_arp_hdr_t*) (response + sizeof(sr_ethernet_hdr_t));
-                    response_ahdr->ar_op = htons(arp_op_reply);
-                    cpy_array(response_ahdr->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
-                    response_ahdr->ar_sip = ahdr->ar_tip;
-                    cpy_array(response_ahdr->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
-                    response_ahdr->ar_tip = ahdr->ar_sip;
-                    sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), interface);
-                    free(response);
-                    break;
-                }
-                itf = itf->next;
+            struct sr_if* itf = sr_get_interface(sr, interface);
+            if (itf->ip == ahdr->ar_tip) {
+                uint8_t *response = build_ether_packet(sizeof(sr_arp_hdr_t),  ehdr->ether_shost, itf->addr, ethertype_arp);
+                assert(response);
+                memcpy(response + sizeof(sr_ethernet_hdr_t), ahdr, sizeof(sr_arp_hdr_t));
+                sr_arp_hdr_t* response_ahdr = (sr_arp_hdr_t*) (response + sizeof(sr_ethernet_hdr_t));
+                response_ahdr->ar_op = htons(arp_op_reply);
+                cpy_array(response_ahdr->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
+                response_ahdr->ar_sip = ahdr->ar_tip;
+                cpy_array(response_ahdr->ar_tha, ahdr->ar_sha, ETHER_ADDR_LEN);
+                response_ahdr->ar_tip = ahdr->ar_sip;
+                sr_send_packet(sr, (uint8_t *)response, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), interface);
+                free(response);
+            }
+            else {
+                printf("not for me");
             }
         }
         else if (ntohs(ahdr->ar_op) == arp_op_reply) {
