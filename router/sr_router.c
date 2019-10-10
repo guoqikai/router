@@ -110,7 +110,7 @@ void sr_handlepacket(struct sr_instance* sr,
                     uint8_t *response = build_ether_packet(sizeof(sr_arp_hdr_t),  ehdr->ether_shost, itf->addr, ethertype_arp);
                     assert(response);
                     memcpy(response + sizeof(sr_ethernet_hdr_t), ahdr, sizeof(sr_arp_hdr_t));
-                    sr_arp_hdr_t* response_ahdr = (sr_arp_hdr_t*) (*response + sizeof(sr_ethernet_hdr_t));
+                    sr_arp_hdr_t* response_ahdr = (sr_arp_hdr_t*) (response + sizeof(sr_ethernet_hdr_t));
                     response_ahdr->ar_op = htons(arp_op_reply);
                     cpy_array(response_ahdr->ar_sha, ahdr->ar_tha, ETHER_ADDR_LEN);
                     response_ahdr->ar_sip = ahdr->ar_tip;
@@ -124,7 +124,7 @@ void sr_handlepacket(struct sr_instance* sr,
                 }
                 break;
             }
-            itf = itf.next;
+            itf = itf->next;
         }
     }
     else if (ntohs(ehdr->ether_type) == ethertype_ip) {
