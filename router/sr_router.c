@@ -164,8 +164,8 @@ void sr_handlepacket(struct sr_instance* sr,
         memcpy(ip_packet, packet, len);
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
         printf("*** -> Received IP packet of length %lu \n", len - sizeof(sr_ethernet_hdr_t));
-        if (!(cksum(ihdr, len - sizeof(sr_ethernet_hdr_t)) + ihdr->ip_sum)){
-            fprintf(stderr, "IP packet has invalid check sum\n");
+        if (cksum(ihdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(uint16_t)) + ihdr->ip_sum) {
+            fprintf(stderr, "IP packet has invalid check sum %d\n", cksum(ihdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(uint16_t)) + ihdr->ip_sum);
             return;
         }
         struct sr_if* itf = sr->if_list;
@@ -174,14 +174,21 @@ void sr_handlepacket(struct sr_instance* sr,
                 free(ip_packet);
                 return;
             }
+            itf = itf->next;
         }
         ihdr->ip_ttl--;
+        char* interface_name = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
+        
         if (!ihdr->ip_ttl) {
             printf("timeout");
-            free(ip_packet);
-            return;
         }
-        
+        else if (interface_name) {
+            
+        }
+        else {
+            
+        }
+        free(ip_packet);
     }
     else {
         fprintf(stderr, "unkonwn packet type\n");

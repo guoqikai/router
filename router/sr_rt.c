@@ -22,6 +22,21 @@
 #include "sr_rt.h"
 #include "sr_router.h"
 
+char *get_longest_prefix_matched_interface(struct sr_instance* sr, uint32_t ip) {
+    struct sr_rt* rt = sr->routing_table;
+    char* match = 0;
+    uint32_t longest_mask = 0;
+    while (rt) {
+        uint32_t dest_ip = rt->dest.s_addr;
+        uint32_t mask = rt->mask.s_addr;
+        if ((dest_ip & mask) == (ip & mask) && longest_mask < mask) {
+            match = rt->interface;
+            longest_mask = mask;
+        }
+        rt = rt->next;
+    }
+    return match;
+}
 /*---------------------------------------------------------------------
  * Method:
  *
