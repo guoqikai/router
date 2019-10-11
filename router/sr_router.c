@@ -90,6 +90,7 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
     struct sr_if* t_itf = sr_get_interface(sr, t_interface);
     struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), t_itf->ip);
     if (entry) {
+        print_addr_ip(entry->ip);
         write_ethernet_header(buffer, entry->mac, t_itf->addr, ethertype_ip);
         sr_send_packet(sr, buffer, len, t_interface);
         free(entry);
@@ -190,7 +191,7 @@ void sr_handlepacket(struct sr_instance* sr,
         struct sr_if* itf = sr->if_list;
         while (itf){
             if (itf->ip == ihdr->ip_dst) {
-                printf("ip for me");
+                printf("ip for me\n");
                 free(ip_packet);
                 return;
             }
