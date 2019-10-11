@@ -161,6 +161,7 @@ void sr_handlepacket(struct sr_instance* sr,
                  sr_ethernet_hdr_t* cached_ehdr = (sr_ethernet_hdr_t*)packet;
                 memcpy(cached_ehdr->ether_dhost, ahdr->ar_sha, ETHER_ADDR_LEN);
                 sr_send_packet(sr, cached_packet, sr_packets->len, interface);
+                sr_packets = sr_packets->next;
             }
             sr_arpreq_destroy(&(sr->cache), req);
         }
@@ -179,7 +180,7 @@ void sr_handlepacket(struct sr_instance* sr,
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
         int sum = ihdr->ip_sum;
         ihdr->ip_sum = 0;
-        printf("*** -> Received IP packet of length %lu \n", len - sizeof(sr_ethernet_hdr_t));
+        printf("*** -> Received IP packet of length %lu from %s\n", len - sizeof(sr_ethernet_hdr_t), interface);
         if (cksum(ihdr, sizeof(sr_ip_hdr_t)) - sum) {
             fprintf(stderr, "IP packet has invalid check sum\n");
             return;
