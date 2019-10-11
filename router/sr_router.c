@@ -64,7 +64,6 @@ void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether
 void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, uint32_t sip, unsigned char* tha, uint32_t tip) {
     assert(packet);
     assert(sha);
-    assert(tha);
     sr_arp_hdr_t *ahdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
     ahdr->ar_hrd = htons(arp_hrd_ethernet);
     ahdr->ar_pro = htons(0x800);
@@ -73,7 +72,7 @@ void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, ui
     ahdr->ar_op = htons(op);
     memcpy(ahdr->ar_sha, sha, ETHER_ADDR_LEN);
     ahdr->ar_sip = sip;
-    if (op == arp_op_request) {
+    if (op == arp_op_request || !tha) {
         memset(ahdr->ar_tha, 0, ETHER_ADDR_LEN);
     }
     else {
