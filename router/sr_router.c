@@ -52,6 +52,9 @@ void sr_init(struct sr_instance* sr)
 } /* -- sr_init -- */
 
 void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type) {
+    assert(packet);
+    assert(ether_dhost);
+    assert(ether_shost);
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet;
     ehdr->ether_type = htons(type);
     memcpy(ehdr->ether_dhost, ether_dhost, ETHER_ADDR_LEN);
@@ -59,6 +62,9 @@ void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether
 }
 
 void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, uint32_t sip, unsigned char* tha, uint32_t tip) {
+    assert(packet);
+    assert(sha);
+    assert(tha);
     sr_arp_hdr_t *ahdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
     ahdr->ar_hrd = htons(arp_hrd_ethernet);
     ahdr->ar_pro = htons(0x800);
