@@ -77,12 +77,13 @@ void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, ui
 }
 
 
-void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, uint32_t ip, char* interface) {
+void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, char* s_interface, char* t_interface) {
     if (len < sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)) {
         fprintf(stderr, "unable to send ip packet: incompelet IP packet\n");
         return;
     }
-    struct sr_if* itf = sr_get_interface_by_dest_ip(sr, ip);
+    struct sr_if* itf = sr_get_interface(sr, t_interface);
+    uint32_t ip = itf->ip;
     struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), ip);
     if (entry) {
         write_ethernet_header(buffer, entry->mac, itf->addr, ethertype_ip);
@@ -92,7 +93,7 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, u
     else {
         uint8_t empty[6] = {0};
         write_ethernet_header(buffer, empty, itf->addr, ethertype_ip);
-        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), ip, buffer, len, interface);
+        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), ip, buffer, len, s_interface);
         handle_arpreq(sr, req);
     }
 }
@@ -163,9 +164,10 @@ void sr_handlepacket(struct sr_instance* sr,
         assert(ip_packet);
         memcpy(ip_packet, packet, len);
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
+        int sum = ihdr->ip_sum;
         printf("*** -> Received IP packet of length %lu \n", len - sizeof(sr_ethernet_hdr_t));
-        if (cksum(ihdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(uint16_t)) + ihdr->ip_sum) {
-            fprintf(stderr, "IP packet has invalid check sum %d\n", cksum(ihdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(uint16_t)) + ihdr->ip_sum);
+        if (cksum(ihdr, sizeof(sr_ip_hdr_t)) - sum) {
+            fprintf(stderr, "IP packet has invalid check sum\n");
             return;
         }
         struct sr_if* itf = sr->if_list;
@@ -178,12 +180,13 @@ void sr_handlepacket(struct sr_instance* sr,
         }
         ihdr->ip_ttl--;
         char* interface_name = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
-        
         if (!ihdr->ip_ttl) {
             printf("timeout");
         }
         else if (interface_name) {
-            
+            sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
+            ihdr->ip_sum = sum;
+            send_ip_packet(sr, ip_packet, len, interface, itf);
         }
         else {
             
