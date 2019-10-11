@@ -38,9 +38,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
                     printf("send ICMP\n");
                     free(entry);
                 }
-                else {
-                    fprintf(stderr, "cannot find entry from ARP cache with the given IP\n");
-                }
+                packet = packet->next;
             }
             sr_arpreq_destroy(&(sr->cache), req);
         }
