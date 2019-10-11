@@ -190,6 +190,7 @@ void sr_handlepacket(struct sr_instance* sr,
         struct sr_if* itf = sr->if_list;
         while (itf){
             if (itf->ip == ihdr->ip_dst) {
+                printf("ip for me");
                 free(ip_packet);
                 return;
             }
