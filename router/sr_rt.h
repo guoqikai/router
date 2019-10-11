@@ -37,6 +37,7 @@ struct sr_rt
 };
 
 char *get_longest_prefix_matched_interface(struct sr_instance* sr, uint32_t ip);
+uint32_t get_dest_ip_by_interface(struct sr_instance*, char*);
 int sr_load_rt(struct sr_instance*,const char*);
 void sr_add_rt_entry(struct sr_instance*, struct in_addr,struct in_addr,
                   struct in_addr, char*);

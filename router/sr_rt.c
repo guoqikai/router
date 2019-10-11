@@ -37,6 +37,17 @@ char *get_longest_prefix_matched_interface(struct sr_instance* sr, uint32_t ip) 
     }
     return match;
 }
+
+uint32_t get_dest_ip_by_interface(struct sr_instance* sr, char* interface) {
+    struct sr_rt* rt = sr->routing_table;
+    while (rt) {
+        if (!strncmp(interface,rt->interface,sr_IFACE_NAMELEN)) {
+            return rt->gw.s_addr;
+        }
+    }
+    return 0;
+}
+
 /*---------------------------------------------------------------------
  * Method:
  *

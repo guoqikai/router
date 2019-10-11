@@ -87,18 +87,17 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
         fprintf(stderr, "unable to send ip packet: incompelet IP packet\n");
         return;
     }
-    struct sr_if* itf = sr_get_interface(sr, t_interface);
-    uint32_t ip = itf->ip;
-    struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), ip);
+    struct sr_if* t_itf = sr_get_interface(sr, t_interface);
+    struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), t_itf->ip);
     if (entry) {
-        write_ethernet_header(buffer, entry->mac, itf->addr, ethertype_ip);
-        sr_send_packet(sr, buffer, len, itf->name);
+        write_ethernet_header(buffer, entry->mac, t_itf->addr, ethertype_ip);
+        sr_send_packet(sr, buffer, len, t_interface);
         free(entry);
     }
     else {
         uint8_t empty[6] = {0};
-        write_ethernet_header(buffer, empty, itf->addr, ethertype_ip);
-        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), ip, buffer, len, s_interface);
+        write_ethernet_header(buffer, empty, t_itf->addr, ethertype_ip);
+        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), t_itf->ip, buffer, len, s_interface);
         handle_arpreq(sr, req);
     }
 }
