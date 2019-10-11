@@ -154,6 +154,15 @@ void sr_handlepacket(struct sr_instance* sr,
         }
         else if (ntohs(ahdr->ar_op) == arp_op_reply) {
             printf("reply for me\n");
+            struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), ahdr->ar_sha, ahdr->ar_sip);
+            struct sr_packet* sr_packets = req->packets;
+            while (sr_packets) {
+                uint8_t* cached_packet = sr_packets->buf;
+                 sr_ethernet_hdr_t* cached_ehdr = (sr_ethernet_hdr_t*)packet;
+                memcpy(cached_ehdr->ether_dhost, ahdr->ar_sha, ETHER_ADDR_LEN);
+                sr_send_packet(sr, cached_packet, sr_packets->len, interface);
+            }
+            sr_arpreq_destroy(&(sr->cache), req);
         }
         else {
             fprintf(stderr, "unknown ARP packet type\n");

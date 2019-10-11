@@ -44,6 +44,7 @@ uint32_t get_dest_ip_by_interface(struct sr_instance* sr, char* interface) {
         if (!strncmp(interface,rt->interface,sr_IFACE_NAMELEN)) {
             return rt->gw.s_addr;
         }
+        rt = rt->next;
     }
     return 0;
 }
