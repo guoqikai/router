@@ -24,6 +24,7 @@
 
 #include "sr_if.h"
 #include "sr_router.h"
+#include "sr_rt.h"
 
 /*--------------------------------------------------------------------- 
  * Method: sr_get_interface
@@ -53,6 +54,19 @@ struct sr_if* sr_get_interface(struct sr_instance* sr, const char* name)
 
     return 0;
 } /* -- sr_get_interface -- */
+
+struct sr_if* sr_get_interface_by_dest_ip(struct sr_instance* sr, uint32_t ip)
+{
+    assert(sr->routing_table);
+    struct sr_rt* rt_walker = sr->routing_table;
+    while (rt_walker) {
+        if ((rt_walker->dest).s_addr == ip) {
+            return sr_get_interface(sr, rt_walker->interface);
+        }
+        rt_walker = rt_walker->next;
+    }
+    return 0;
+}
 
 /*--------------------------------------------------------------------- 
  * Method: sr_add_interface(..)

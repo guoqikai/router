@@ -10,6 +10,7 @@
 #include "sr_router.h"
 #include "sr_if.h"
 #include "sr_protocol.h"
+#include "sr_utils.c"
 
 /* 
   This function gets called every second. For each request sent out, we keep
@@ -17,7 +18,45 @@
   See the comments in the header file for an idea of what it should look like.
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) { 
-    /* Fill this in */
+    struct sr_arpreq* request = sr->cache.requests;
+    while (request) {
+        handle_arpreq(sr, request);
+        request = request->next;
+    }
+}
+
+void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
+    if (difftime(time(NULL), req->sent) > 1) {
+        if (req->times_sent >= 5) {
+            fprintf(stderr, "cannot reach host with IP address:");
+            print_addr_ip(*(struct in_addr*)&req->ip);
+            struct sr_packet *packet = req->packets;
+            while (packet) {
+                struct sr_arpentry *entry = sr_arpcache_lookup(&(sr->cache), sr_get_interface(sr, packet->iface)->ip);
+                if (entry) {
+                    send_ICMP_packet(sr, 3, 1, packet->iface);
+                    free(entry);
+                }
+                else {
+                    fprintf(stderr, "cannot find entry from ARP cache with the given IP\n");
+                }
+            }
+            sr_arpreq_destroy(&(sr->cache), req);
+        }
+        else {
+            struct sr_if *itf = sr_get_interface_by_dest_ip(sr, req->ip);
+            uint8_t dhost_addr[4] = {0xff, 0xff, 0xff, 0xff};
+            uint8_t *arp_packet = (uint8_t*)malloc(sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
+            assert(arp_packet);
+            write_ethernet_header(arp_packet, dhost_addr, itf->addr, ethertype_arp);
+            write_arp_header(arp_packet, arp_op_request, itf->addr, itf->ip, NULL, req->ip);
+            sr_arp_hdr_t *ahdr = (sr_arp_hdr_t*)(arp_packet + sizeof(sr_ethernet_hdr_t));
+            sr_send_packet(sr, arp_packet, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), itf->name);
+            free(arp_packet);
+            req->times_sent += 1;
+            req->sent = time(NULL);
+        }
+    }
 }
 
 /* You should not need to touch the rest of this code. */
