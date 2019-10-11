@@ -165,6 +165,7 @@ void sr_handlepacket(struct sr_instance* sr,
         memcpy(ip_packet, packet, len);
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
         int sum = ihdr->ip_sum;
+        ihdr->ip_sum = 0;
         printf("*** -> Received IP packet of length %lu \n", len - sizeof(sr_ethernet_hdr_t));
         if (cksum(ihdr, sizeof(sr_ip_hdr_t)) - sum) {
             fprintf(stderr, "IP packet has invalid check sum\n");
@@ -186,10 +187,10 @@ void sr_handlepacket(struct sr_instance* sr,
         else if (interface_name) {
             sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
             ihdr->ip_sum = sum;
-            send_ip_packet(sr, ip_packet, len, interface, itf);
+            send_ip_packet(sr, ip_packet, len, interface, interface_name);
         }
         else {
-            
+            printf("wrong ip\n");
         }
         free(ip_packet);
     }
