@@ -154,7 +154,7 @@ void sr_handlepacket(struct sr_instance* sr,
         }
         else if (ntohs(ahdr->ar_op) == arp_op_reply) {
             printf("reply for me\n");
-            struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), ahdr->ar_sha, ahdr->ar_sip);
+            struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), ahdr->ar_sha, ahdr->ar_tip);
             struct sr_packet* sr_packets = req->packets;
             while (sr_packets) {
                 uint8_t* cached_packet = sr_packets->buf;
