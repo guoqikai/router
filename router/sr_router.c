@@ -100,7 +100,7 @@ void write_ip_icmp_header(uint8_t* packet, unsigned short type, unsigned short c
     ihdr->ip_src = ip_src;
     ihdr->ip_dst = ip_dst;
     ihdr->ip_sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
-    len -= sizeof(sr_arp_hdr_t);
+    len -= sizeof(sr_ip_hdr_t);
     if (type == 3) {
         assert(len >= sizeof(sr_icmp_t3_hdr_t));
     }
