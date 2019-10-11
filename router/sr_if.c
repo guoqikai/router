@@ -57,10 +57,9 @@ struct sr_if* sr_get_interface(struct sr_instance* sr, const char* name)
 
 struct sr_if* sr_get_interface_by_ip(struct sr_instance* sr, uint32_t ip) {
     assert(sr->routing_table);
-    struct if_walker = sr->if_list;
+    struct sr_if* if_walker = sr->if_list;
     
-    while(if_walker)
-    {
+    while (if_walker) {
         if(if_walker->ip == ip)
         { return if_walker; }
         if_walker = if_walker->next;
