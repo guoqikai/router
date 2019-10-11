@@ -55,15 +55,15 @@ struct sr_if* sr_get_interface(struct sr_instance* sr, const char* name)
     return 0;
 } /* -- sr_get_interface -- */
 
-struct sr_if* sr_get_interface_ip(struct sr_instance* sr, uint32_t ip)
-{
+struct sr_if* sr_get_interface_by_ip(struct sr_instance* sr, uint32_t ip) {
     assert(sr->routing_table);
-    struct sr_rt* rt_walker = sr->routing_table;
-    while (rt_walker) {
-        if ((rt_walker->dest).s_addr == ip) {
-            return sr_get_interface(sr, rt_walker->interface);
-        }
-        rt_walker = rt_walker->next;
+    struct if_walker = sr->if_list;
+    
+    while(if_walker)
+    {
+        if(if_walker->ip == ip)
+        { return if_walker; }
+        if_walker = if_walker->next;
     }
     return 0;
 }
