@@ -123,6 +123,7 @@ void send_icmp_packet(struct sr_instance* sr,  char* interface, unsigned short t
     assert(packet);
     memset(packet, 0, len);
     write_ip_icmp_header(packet, type, code, ip_src, ip_dst, len);
+    print_hdrs(buf, len);
     send_ip_packet(sr, packet, len, interface, interface);
     free(packet);
 }
@@ -226,28 +227,29 @@ void sr_handlepacket(struct sr_instance* sr,
             fprintf(stderr, "IP packet has invalid check sum\n");
             return;
         }
-        struct sr_if* itf = sr_get_interface(sr, interface);
-        printf("%d, %d", itf->ip, ihdr->ip_dst);
-        if (itf->ip == ihdr->ip_dst) {
-            if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
-                send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
-                printf("3, 3\n");
+        struct sr_if* itf = sr->if_list;
+        while (itf){
+            if (itf->ip == ihdr->ip_dst) {
+                if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
+                    send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
+                }
+                else {
+                    write_ip_icmp_header(ip_packet, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
+                    send_ip_packet(sr, ip_packet, len, interface, interface);
+                }
+                free(ip_packet);
+                return;
             }
-            else {
-                printf("0, 0\n");
-                write_ip_icmp_header(ip_packet, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
-                send_ip_packet(sr, ip_packet, len, interface, interface);
-            }
+            itf = itf->next;
         }
         ihdr->ip_ttl--;
+        itf = sr_get_interface(sr, interface);
         if (!ihdr->ip_ttl) {
-            printf("11, 0\n");
             send_icmp_packet(sr, interface, 11, 0, itf->ip, ihdr->ip_src);
         }
         else {
             char* t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
             if (!t_interface) {
-                printf("3, 0\n");
                 send_icmp_packet(sr, interface, 3, 0, itf->ip, ihdr->ip_src);
             }
             else {
