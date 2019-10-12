@@ -223,7 +223,7 @@ void sr_handlepacket(struct sr_instance* sr,
         assert(ip_packet);
         memcpy(ip_packet, packet, len);
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
-        sr_ip_hdr_t* origin_ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
+        sr_ip_hdr_t* origin_ihdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
         int sum = ihdr->ip_sum;
         ihdr->ip_sum = 0;
         printf("*** -> Received IP packet of length %lu from %s\n", len - sizeof(sr_ethernet_hdr_t), interface);
