@@ -230,35 +230,30 @@ void sr_handlepacket(struct sr_instance* sr,
             fprintf(stderr, "IP packet has invalid check sum\n");
             return;
         }
-        struct sr_if* itf = sr->if_list;
-        while (itf){
-            if (itf->ip == ihdr->ip_dst) {
-                print_hdrs(packet, len);
-                if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
-                    send_icmp_packet(sr, ihdr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
-                }
-                else {
-                    write_ip_icmp_header(ip_packet, NULL, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
-                    send_ip_packet(sr, ip_packet, len, interface, interface);
-                }
-                free(ip_packet);
-                return;
-            }
-            itf = itf->next;
-        }
-        ihdr->ip_ttl--;
-        itf = sr_get_interface(sr, interface);
-        if (!ihdr->ip_ttl) {
-            send_icmp_packet(sr, ihdr, interface, 11, 0, itf->ip, ihdr->ip_src);
-        }
-        else {
-            char* t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
-            if (!t_interface) {
-                send_icmp_packet(sr, ihdr, interface, 3, 0, itf->ip, ihdr->ip_src);
+        struct sr_if* itf = sr_get_interface(sr, interface);
+        if (sr_get_interface_by_ip(sr, ihdr->ip_dst)){
+            if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
+                send_icmp_packet(sr, ihdr, interface, 3, 3, itf->ip, ihdr->ip_src);
             }
             else {
-                ihdr->ip_sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
-                send_ip_packet(sr, ip_packet, len, interface, t_interface);
+                write_ip_icmp_header(ip_packet, NULL, 0, 0, itf->ip, ihdr->ip_src, len);
+                send_ip_packet(sr, ip_packet, len, interface, interface);
+            }
+        }
+        else {
+            ihdr->ip_ttl--;
+            if (!ihdr->ip_ttl) {
+                send_icmp_packet(sr, ihdr, interface, 11, 0, itf->ip, ihdr->ip_src);
+            }
+            else {
+                char* t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
+                if (!t_interface) {
+                    send_icmp_packet(sr, ihdr, interface, 3, 0, itf->ip, ihdr->ip_src);
+                }
+                else {
+                    ihdr->ip_sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
+                    send_ip_packet(sr, ip_packet, len, interface, t_interface);
+                }
             }
         }
         free(ip_packet);
