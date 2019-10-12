@@ -110,7 +110,7 @@ void write_ip_icmp_header(uint8_t* packet, sr_ip_hdr_t* old_ihdr, unsigned short
         icmp->icmp_code = code;
         icmp->icmp_sum = 0;
         memcpy(icmp->data, old_ihdr, ICMP_DATA_SIZE);
-        icmp->icmp_sum = cksum(icmp, sizeof(sr_icmp_hdr_t));
+        icmp->icmp_sum = cksum(icmp, sizeof(sr_icmp_t3_hdr_t));
     }
     else {
         assert(len >= sizeof(sr_icmp_hdr_t));
@@ -118,7 +118,7 @@ void write_ip_icmp_header(uint8_t* packet, sr_ip_hdr_t* old_ihdr, unsigned short
         icmp->icmp_type = type;
         icmp->icmp_code = code;
         icmp->icmp_sum = 0;
-        icmp->icmp_sum = cksum(icmp, sizeof(sr_icmp_hdr_t));
+        icmp->icmp_sum = cksum(icmp, len);
     }
 }
 
@@ -233,10 +233,10 @@ void sr_handlepacket(struct sr_instance* sr,
         struct sr_if* itf = sr_get_interface(sr, interface);
         if (sr_get_interface_by_ip(sr, ihdr->ip_dst)){
             if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
-                send_icmp_packet(sr, ihdr, interface, 3, 3, itf->ip, ihdr->ip_src);
+                send_icmp_packet(sr, ihdr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
             }
             else {
-                write_ip_icmp_header(ip_packet, NULL, 0, 0, itf->ip, ihdr->ip_src, len);
+                write_ip_icmp_header(ip_packet, NULL, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
                 send_ip_packet(sr, ip_packet, len, interface, interface);
             }
         }
