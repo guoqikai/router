@@ -93,7 +93,7 @@ void write_ip_icmp_header(uint8_t* packet, unsigned short type, unsigned short c
         ihdr->ip_len = htons(len);
     }
     ihdr->ip_v = 4;
-    ihdr->ip_hl = sizeof(sr_ip_hdr_t);
+    ihdr->ip_hl = 5;
     ihdr->ip_id = 0;
     ihdr->ip_off = htons(IP_DF);
     ihdr->ip_ttl = 64;
@@ -126,7 +126,6 @@ void send_icmp_packet(struct sr_instance* sr,  char* interface, unsigned short t
     memset(packet, 0, len);
     write_ip_icmp_header(packet, type, code, ip_src, ip_dst, len);
     send_ip_packet(sr, packet, len, interface, interface);
-    print_hdrs(packet, len);
     free(packet);
 }
 
@@ -197,7 +196,6 @@ void sr_handlepacket(struct sr_instance* sr,
             free(response);
         }
         else if (ntohs(ahdr->ar_op) == arp_op_reply) {
-            printf("reply for me\n");
             struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), ahdr->ar_sha, ahdr->ar_tip);
             struct sr_packet* sr_packets = req->packets;
             while (sr_packets) {
@@ -232,6 +230,7 @@ void sr_handlepacket(struct sr_instance* sr,
         struct sr_if* itf = sr->if_list;
         while (itf){
             if (itf->ip == ihdr->ip_dst) {
+                print_hdrs(packet, len);
                 if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
                     send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
                 }
