@@ -93,7 +93,7 @@ void write_ip_icmp_header(uint8_t* packet, unsigned short type, unsigned short c
         ihdr->ip_len = htons(len);
     }
     ihdr->ip_v = 4;
-    ihdr->ip_hl = 5;
+    ihdr->ip_hl = sizeof(sr_ip_hdr_t);
     ihdr->ip_id = 0;
     ihdr->ip_off = htons(IP_DF);
     ihdr->ip_ttl = 64;
@@ -126,6 +126,7 @@ void send_icmp_packet(struct sr_instance* sr,  char* interface, unsigned short t
     memset(packet, 0, len);
     write_ip_icmp_header(packet, type, code, ip_src, ip_dst, len);
     send_ip_packet(sr, packet, len, interface, interface);
+    print_hdrs(packet, len);
     free(packet);
 }
 
