@@ -29,7 +29,7 @@ char *get_longest_prefix_matched_interface(struct sr_instance* sr, uint32_t ip) 
     while (rt) {
         uint32_t dest_ip = rt->dest.s_addr;
         uint32_t mask = rt->mask.s_addr;
-        if ((dest_ip & mask) == (ip & mask) && longest_mask < mask) {
+        if (dest_ip == (ip & mask) && longest_mask < mask) {
             match = rt->interface;
             longest_mask = mask;
         }
