@@ -227,6 +227,7 @@ void sr_handlepacket(struct sr_instance* sr,
             return;
         }
         struct sr_if* itf = sr_get_interface(sr, interface);
+        printf("%d, %d", itf->ip, ihdr->ip_dst);
         if (itf->ip == ihdr->ip_dst) {
             if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
                 send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
