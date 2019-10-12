@@ -83,7 +83,7 @@ void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, ui
     ahdr->ar_tip = tip;
 }
 
-void write_ip_icmp_header(uint8_t* packet, sr_ip_hdr_t* old_ihdr, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst, unsigned int len){
+void write_ip_icmp_header(uint8_t* packet, const sr_ip_hdr_t* old_ihdr, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst, unsigned int len){
     assert(packet);
     len -= sizeof(sr_ethernet_hdr_t);
     assert(len >= sizeof(sr_ip_hdr_t));
@@ -122,7 +122,7 @@ void write_ip_icmp_header(uint8_t* packet, sr_ip_hdr_t* old_ihdr, unsigned short
     }
 }
 
-void send_icmp_packet(struct sr_instance* sr, sr_ip_hdr_t* old_ihdr, char* interface, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst) {
+void send_icmp_packet(struct sr_instance* sr, const sr_ip_hdr_t* old_ihdr, char* interface, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst) {
     int len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
     uint8_t* packet = (uint8_t*)malloc(len);
     assert(packet);
@@ -223,6 +223,7 @@ void sr_handlepacket(struct sr_instance* sr,
         assert(ip_packet);
         memcpy(ip_packet, packet, len);
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
+        sr_ip_hdr_t* origin_ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
         int sum = ihdr->ip_sum;
         ihdr->ip_sum = 0;
         printf("*** -> Received IP packet of length %lu from %s\n", len - sizeof(sr_ethernet_hdr_t), interface);
@@ -233,7 +234,7 @@ void sr_handlepacket(struct sr_instance* sr,
         struct sr_if* itf = sr_get_interface(sr, interface);
         if (sr_get_interface_by_ip(sr, ihdr->ip_dst)){
             if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
-                send_icmp_packet(sr, ihdr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
+                send_icmp_packet(sr, origin_ihdr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
             }
             else {
                 write_ip_icmp_header(ip_packet, NULL, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
@@ -243,12 +244,12 @@ void sr_handlepacket(struct sr_instance* sr,
         else {
             ihdr->ip_ttl--;
             if (!ihdr->ip_ttl) {
-                send_icmp_packet(sr, ihdr, interface, 11, 0, itf->ip, ihdr->ip_src);
+                send_icmp_packet(sr, origin_ihdr, interface, 11, 0, itf->ip, ihdr->ip_src);
             }
             else {
                 char* t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
                 if (!t_interface) {
-                    send_icmp_packet(sr, ihdr, interface, 3, 0, itf->ip, ihdr->ip_src);
+                    send_icmp_packet(sr, origin_ihdr, interface, 3, 0, itf->ip, ihdr->ip_src);
                 }
                 else {
                     ihdr->ip_sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
