@@ -242,13 +242,14 @@ void sr_handlepacket(struct sr_instance* sr,
             itf = itf->next;
         }
         ihdr->ip_ttl--;
+        itf = sr_get_interface(sr, interface);
         if (!ihdr->ip_ttl) {
-            send_icmp_packet(sr, interface, 11, 0, ihdr->ip_dst, ihdr->ip_src);
+            send_icmp_packet(sr, interface, 11, 0, itf->ip, ihdr->ip_src);
         }
         else {
             char* t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
             if (!t_interface) {
-                send_icmp_packet(sr, interface, 3, 0, ihdr->ip_dst, ihdr->ip_src);
+                send_icmp_packet(sr, interface, 3, 0, itf->ip, ihdr->ip_src);
             }
             else {
                 ihdr->ip_sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
