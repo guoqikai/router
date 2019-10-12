@@ -230,19 +230,23 @@ void sr_handlepacket(struct sr_instance* sr,
         if (itf->ip == ihdr->ip_dst) {
             if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
                 send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
+                printf("3, 3\n");
             }
             else {
+                printf("0, 0\n");
                 write_ip_icmp_header(ip_packet, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
                 send_ip_packet(sr, ip_packet, len, interface, interface);
             }
         }
         ihdr->ip_ttl--;
         if (!ihdr->ip_ttl) {
+            printf("11, 0\n");
             send_icmp_packet(sr, interface, 11, 0, itf->ip, ihdr->ip_src);
         }
         else {
             char* t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
             if (!t_interface) {
+                printf("3, 0\n");
                 send_icmp_packet(sr, interface, 3, 0, itf->ip, ihdr->ip_src);
             }
             else {
