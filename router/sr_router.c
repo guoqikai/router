@@ -123,10 +123,7 @@ void write_ip_icmp_header(uint8_t* packet, sr_ip_hdr_t* old_ihdr, unsigned short
 }
 
 void send_icmp_packet(struct sr_instance* sr, sr_ip_hdr_t* old_ihdr, char* interface, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst) {
-    int len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
-    if (type == 3) {
-        len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
-    }
+    int len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
     uint8_t* packet = (uint8_t*)malloc(len);
     assert(packet);
     memset(packet, 0, len);
