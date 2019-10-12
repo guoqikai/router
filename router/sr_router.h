@@ -70,6 +70,7 @@ void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 void write_ip_icmp_header(uint8_t* packet, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst, unsigned int len);
 void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type, unsigned int len);
 void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, uint32_t sip, unsigned char* tha, uint32_t tip, unsigned int len);
+void send_icmp_packet(struct sr_instance* sr, char* interface, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst);
 void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, char* s_interface, char* t_interface);
 
 /* -- sr_if.c -- */

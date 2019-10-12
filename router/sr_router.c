@@ -114,6 +114,19 @@ void write_ip_icmp_header(uint8_t* packet, unsigned short type, unsigned short c
     icmp->icmp_sum = cksum(icmp, sizeof(sr_icmp_hdr_t));
 }
 
+void send_icmp_packet(struct sr_instance* sr,  char* interface, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst) {
+    int len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
+    if (type == 3) {
+        len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
+    }
+    uint8_t* packet = (uint8_t*)malloc(len);
+    assert(packet);
+    memset(packet, 0, len);
+    write_ip_icmp_header(packet, type, code, ip_src, ip_dst, len);
+    send_ip_packet(sr, packet, len, interface, interface);
+    free(packet);
+}
+
 void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, char* s_interface, char* t_interface) {
     if (len < sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)) {
         fprintf(stderr, "unable to send ip packet: incompelet IP packet\n");
@@ -203,7 +216,6 @@ void sr_handlepacket(struct sr_instance* sr,
             return;
         }
         uint8_t* ip_packet = (uint8_t*)malloc(len);
-        char* t_interface = interface;
         assert(ip_packet);
         memcpy(ip_packet, packet, len);
         sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*) (ip_packet + sizeof(sr_ethernet_hdr_t));
@@ -218,18 +230,12 @@ void sr_handlepacket(struct sr_instance* sr,
         while (itf){
             if (itf->ip == ihdr->ip_dst) {
                 if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
-                    len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
-                    uint8_t* icmp_buf = (uint8_t*)malloc(len);
-                    assert(icmp_buf);
-                    memset(icmp_buf, 0, len);
-                    write_ip_icmp_header(icmp_buf, 3, 3, ihdr->ip_dst, ihdr->ip_src, len);
-                    free(ip_packet);
-                    ip_packet = icmp_buf;
+                    send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
                 }
                 else {
                     write_ip_icmp_header(ip_packet, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
+                    send_ip_packet(sr, ip_packet, len, interface, interface);
                 }
-                send_ip_packet(sr, ip_packet, len, interface, interface);
                 free(ip_packet);
                 return;
             }
@@ -237,29 +243,18 @@ void sr_handlepacket(struct sr_instance* sr,
         }
         ihdr->ip_ttl--;
         if (!ihdr->ip_ttl) {
-            len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
-            uint8_t* icmp_buf = (uint8_t*)malloc(len);
-            assert(icmp_buf);
-            write_ip_icmp_header(icmp_buf, 11, 0, ihdr->ip_dst, ihdr->ip_src, len);
-            free(ip_packet);
-            ip_packet = icmp_buf;
+            send_icmp_packet(sr, interface, 11, 0, ihdr->ip_dst, ihdr->ip_src);
         }
         else {
-            t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
+            char* t_interface = get_longest_prefix_matched_interface(sr, ihdr->ip_dst);
             if (!t_interface) {
-                t_interface = interface;
-                len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
-                uint8_t* icmp_buf = (uint8_t*)malloc(len);
-                assert(icmp_buf);
-                write_ip_icmp_header(icmp_buf, 3, 0, ihdr->ip_dst, ihdr->ip_src, len);
-                free(ip_packet);
-                ip_packet = icmp_buf;
+                send_icmp_packet(sr, interface, 3, 0, ihdr->ip_dst, ihdr->ip_src);
             }
             else {
                 ihdr->ip_sum = cksum(ihdr, sizeof(sr_ip_hdr_t));
+                send_ip_packet(sr, ip_packet, len, interface, t_interface);
             }
         }
-        send_ip_packet(sr, ip_packet, len, interface, t_interface);
         free(ip_packet);
     }
     else {
