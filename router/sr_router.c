@@ -226,23 +226,17 @@ void sr_handlepacket(struct sr_instance* sr,
             fprintf(stderr, "IP packet has invalid check sum\n");
             return;
         }
-        struct sr_if* itf = sr->if_list;
-        while (itf){
-            if (itf->ip == ihdr->ip_dst) {
-                if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
-                    send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
-                }
-                else {
-                    write_ip_icmp_header(ip_packet, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
-                    send_ip_packet(sr, ip_packet, len, interface, interface);
-                }
-                free(ip_packet);
-                return;
+        struct sr_if* itf = sr_get_interface(sr, interface);
+        if (itf->ip == ihdr->ip_dst) {
+            if (ihdr->ip_p == 6 || ihdr->ip_p == 17) {
+                send_icmp_packet(sr, interface, 3, 3, ihdr->ip_dst, ihdr->ip_src);
             }
-            itf = itf->next;
+            else {
+                write_ip_icmp_header(ip_packet, 0, 0, ihdr->ip_dst, ihdr->ip_src, len);
+                send_ip_packet(sr, ip_packet, len, interface, interface);
+            }
         }
         ihdr->ip_ttl--;
-        itf = sr_get_interface(sr, interface);
         if (!ihdr->ip_ttl) {
             send_icmp_packet(sr, interface, 11, 0, itf->ip, ihdr->ip_src);
         }
