@@ -92,6 +92,8 @@ void write_ip_icmp_header(uint8_t* packet, unsigned short type, unsigned short c
     if (!ihdr->ip_len) {
         ihdr->ip_len = htons(len);
     }
+    iphdr->ip_v = 4;
+    iphdr->ip_hl = 5;
     ihdr->ip_id = 0;
     ihdr->ip_off = htons(IP_DF);
     ihdr->ip_ttl = 64;
