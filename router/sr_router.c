@@ -204,7 +204,7 @@ void sr_handlepacket(struct sr_instance* sr,
         }
         printf("*** -> Received ARP packet of length %lu from %s\n",len - sizeof(sr_ethernet_hdr_t), interface);
         sr_arp_hdr_t* ahdr = (sr_arp_hdr_t *) (packet + sizeof(sr_ethernet_hdr_t));
-        struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), ahdr->ar_sha, ahdr->ar_tip);
+        struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), ahdr->ar_sha, ahdr->ar_sip);
         if (ntohs(ahdr->ar_op) == arp_op_request) {
             struct sr_if* itf = sr_get_interface(sr, interface);
             uint8_t *response = (uint8_t*)malloc(sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
@@ -217,7 +217,6 @@ void sr_handlepacket(struct sr_instance* sr,
         else if (ntohs(ahdr->ar_op) == arp_op_reply) {
             struct sr_packet* sr_packets = req->packets;
             while (sr_packets) {
-                fprintf(stderr, "ok\n");
                 uint8_t* cached_packet = sr_packets->buf;
                  sr_ethernet_hdr_t* cached_ehdr = (sr_ethernet_hdr_t*)cached_packet;
                 memcpy(cached_ehdr->ether_dhost, ahdr->ar_sha, ETHER_ADDR_LEN);
