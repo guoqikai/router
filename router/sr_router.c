@@ -155,7 +155,6 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
     struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), ihdr->ip_dst);
     struct sr_if* t_itf = sr_get_interface(sr, t_interface);
     if (entry) {
-        fprintf(stderr, "entry");
         write_ethernet_header(buffer, entry->mac, t_itf->addr, ethertype_ip, len);
         sr_send_packet(sr, buffer, len, t_interface);
         free(entry);
