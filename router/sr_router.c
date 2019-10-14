@@ -51,6 +51,13 @@ void sr_init(struct sr_instance* sr)
 
 } /* -- sr_init -- */
 
+/*---------------------------------------------------------------------
+ * Method: write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type, unsigned int len)
+ * Scope:  Global
+ *
+ * write ethernet header to the given packet
+ *
+ *---------------------------------------------------------------------*/
 void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type, unsigned int len) {
     assert(packet);
     assert(ether_dhost);
@@ -60,7 +67,7 @@ void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether
     ehdr->ether_type = htons(type);
     memcpy(ehdr->ether_dhost, ether_dhost, ETHER_ADDR_LEN);
     memcpy(ehdr->ether_shost, ether_shost, ETHER_ADDR_LEN);
-}
+} /* -- write_ethernet_header -- */
 
 void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, uint32_t sip, unsigned char* tha, uint32_t tip, unsigned int len) {
     assert(packet);
@@ -147,7 +154,7 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
     else {
         uint8_t empty[6] = {0};
         write_ethernet_header(buffer, empty, t_itf->addr, ethertype_ip, len);
-        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), t_itf->ip, buffer, len, s_interface);
+        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), t_itf->ip, buffer, len, t_interface);
         handle_arpreq(sr, req);
     }
 }
