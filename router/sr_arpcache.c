@@ -48,7 +48,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
             assert(arp_packet);
             write_ethernet_header(arp_packet, dhost_addr, itf->addr, ethertype_arp, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
             write_arp_header(arp_packet, arp_op_request, itf->addr, itf->ip, NULL, req->ip, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
-            sr_send_packet(sr, arp_packet, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), itf->name);
+            sr_send_packet(sr, arp_packet, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), interface_name);
             free(arp_packet);
             req->times_sent += 1;
             req->sent = time(NULL);
