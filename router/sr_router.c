@@ -97,6 +97,13 @@ void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, ui
     ahdr->ar_tip = tip;
 }  /* -- write_arp_header -- */
 
+/*---------------------------------------------------------------------
+ * Method:  write_ip_icmp_header(uint8_t* packet, const sr_ip_hdr_t* old_ihdr, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst, unsigned int len)
+ * Scope:  Global
+ *
+ * write ip and icmp header(type 0, 3 or 11) to the given buffer(packet), it will assert buffter length. old_ihdr is used only when type == 3 or 11
+ *
+ *---------------------------------------------------------------------*/
 void write_ip_icmp_header(uint8_t* packet, const sr_ip_hdr_t* old_ihdr, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst, unsigned int len){
     assert(packet);
     len -= sizeof(sr_ethernet_hdr_t);
@@ -134,8 +141,15 @@ void write_ip_icmp_header(uint8_t* packet, const sr_ip_hdr_t* old_ihdr, unsigned
         icmp->icmp_sum = 0;
         icmp->icmp_sum = cksum(icmp, len);
     }
-}
+} /* -- write_ip_icmp_header -- */
 
+/*---------------------------------------------------------------------
+ * Method: send_icmp_packet(struct sr_instance* sr, const sr_ip_hdr_t* old_ihdr, char* interface, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst)
+ * Scope:  Global
+ *
+ * send a icmp meesage. This function only works for type 3 and 11 icmp message
+ *
+ *---------------------------------------------------------------------*/
 void send_icmp_packet(struct sr_instance* sr, const sr_ip_hdr_t* old_ihdr, char* interface, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst) {
     int len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
     uint8_t* packet = (uint8_t*)malloc(len);
@@ -144,8 +158,14 @@ void send_icmp_packet(struct sr_instance* sr, const sr_ip_hdr_t* old_ihdr, char*
     write_ip_icmp_header(packet, old_ihdr, type, code, ip_src, ip_dst, len);
     send_ip_packet(sr, packet, len, interface, interface);
     free(packet);
-}
+} /* -- send_icmp_packet -- */
 
+/*---------------------------------------------------------------------
+ * Method: send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, char* s_interface, char* t_interface)
+ * Scope:  Global
+ *
+ * send a ip packet. This function assume buffter is a valid ip packet. If s_interface and t_interface has the same value, it will send the packet only if t_interface is in the arp cache.
+ *---------------------------------------------------------------------*/
 void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, char* s_interface, char* t_interface) {
     if (len < sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)) {
         fprintf(stderr, "unable to send ip packet: incompelet IP packet\n");
@@ -159,13 +179,16 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
         sr_send_packet(sr, buffer, len, t_interface);
         free(entry);
     }
-    else {
+    else if (strcmp(s_interface, t_interface)){
         uint8_t empty[6] = {0};
         write_ethernet_header(buffer, empty, t_itf->addr, ethertype_ip, len);
         struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), ihdr->ip_dst, buffer, len, s_interface);
         handle_arpreq(sr, req);
     }
-}
+    else {
+        fprintf(stderr, "Unable to send ICMP packet as sender's ip is not in arp cache");
+    }
+} /* -- send_ip_packet -- */
 
 /*---------------------------------------------------------------------
  * Method: sr_handlepacket(uint8_t* p,char* interface)
