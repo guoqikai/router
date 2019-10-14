@@ -217,7 +217,7 @@ void sr_handlepacket(struct sr_instance* sr,
         else if (ntohs(ahdr->ar_op) == arp_op_reply) {
             printf("arp reply for me\n");
             struct sr_packet* sr_packets = req->packets;
-            assert(sr_packet);
+            assert(sr_packets);
             while (sr_packets) {
                 uint8_t* cached_packet = sr_packets->buf;
                 sr_ethernet_hdr_t* cached_ehdr = (sr_ethernet_hdr_t*)cached_packet;
