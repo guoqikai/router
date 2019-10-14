@@ -155,6 +155,7 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
     struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), ihdr->ip_dst);
     struct sr_if* t_itf = sr_get_interface(sr, t_interface);
     if (entry) {
+        fprintf(stderr, "entry");
         write_ethernet_header(buffer, entry->mac, t_itf->addr, ethertype_ip, len);
         sr_send_packet(sr, buffer, len, t_interface);
         free(entry);
@@ -218,7 +219,7 @@ void sr_handlepacket(struct sr_instance* sr,
             struct sr_packet* sr_packets = req->packets;
             while (sr_packets) {
                 uint8_t* cached_packet = sr_packets->buf;
-                 sr_ethernet_hdr_t* cached_ehdr = (sr_ethernet_hdr_t*)cached_packet;
+                sr_ethernet_hdr_t* cached_ehdr = (sr_ethernet_hdr_t*)cached_packet;
                 memcpy(cached_ehdr->ether_dhost, ahdr->ar_sha, ETHER_ADDR_LEN);
                 sr_send_packet(sr, cached_packet, sr_packets->len, interface);
                 sr_packets = sr_packets->next;
