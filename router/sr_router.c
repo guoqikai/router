@@ -218,9 +218,9 @@ void sr_handlepacket(struct sr_instance* sr,
             struct sr_packet* sr_packets = req->packets;
             while (sr_packets) {
                 uint8_t* cached_packet = sr_packets->buf;
-                print_hdrs(cached_packet, sr_packets->len);
                 sr_ethernet_hdr_t* cached_ehdr = (sr_ethernet_hdr_t*)cached_packet;
                 memcpy(cached_ehdr->ether_dhost, ahdr->ar_sha, ETHER_ADDR_LEN);
+                print_hdrs(cached_packet, sr_packets->len);
                 sr_send_packet(sr, cached_packet, sr_packets->len, interface);
                 sr_packets = sr_packets->next;
             }
