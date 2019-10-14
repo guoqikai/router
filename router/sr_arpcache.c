@@ -34,9 +34,8 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
             print_addr_ip(*(struct in_addr*)&req->ip);
             struct sr_packet *packet = req->packets;
             while (packet) {
-                sr_ip_hdr_t* p_ihdr = (sr_ip_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
-                print_hdr_ip(p_ihdr);
-                send_icmp_packet(sr, p_ihdr, packet->iface, 3, 1, p_ihdr->ip_dst, p_ihdr->ip_src);
+                sr_ip_hdr_t* p_ihdr = (sr_ip_hdr_t*)((packet->buf) + sizeof(sr_ethernet_hdr_t));
+                send_icmp_packet(sr, p_ihdr, packet->iface, 3, 1, req->ip, p_ihdr->ip_src);
                 packet = packet->next;
             }
             sr_arpreq_destroy(&(sr->cache), req);
