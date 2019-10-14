@@ -41,7 +41,8 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
             sr_arpreq_destroy(&(sr->cache), req);
         }
         else {
-            struct sr_if *itf = sr_get_interface_by_ip(sr, req->ip);
+            char* interface_name = get_longest_prefix_matched_interface(sr, req->ip);
+            struct sr_if *itf = sr_get_interface(sr, interface_name);
             uint8_t dhost_addr[4] = {0xff, 0xff, 0xff, 0xff};
             uint8_t *arp_packet = (uint8_t*)malloc(sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
             assert(arp_packet);

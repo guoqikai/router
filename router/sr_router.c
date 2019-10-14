@@ -55,7 +55,7 @@ void sr_init(struct sr_instance* sr)
  * Method: write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type, unsigned int len)
  * Scope:  Global
  *
- * write ethernet header to the given packet
+ * write ethernet header to the given buffer(packet) it will assert len >= sizeof(ehdr)
  *
  *---------------------------------------------------------------------*/
 void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether_shost, uint16_t type, unsigned int len) {
@@ -69,6 +69,13 @@ void write_ethernet_header(uint8_t* packet, uint8_t* ether_dhost, uint8_t* ether
     memcpy(ehdr->ether_shost, ether_shost, ETHER_ADDR_LEN);
 } /* -- write_ethernet_header -- */
 
+/*---------------------------------------------------------------------
+ * Method:  write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, uint32_t sip, unsigned char* tha, uint32_t tip, unsigned int len)
+ * Scope:  Global
+ *
+ * write arp header to the given buffer(packet), it will assert len >= sizeof(ehdr) + sizeof(ahdr)
+ *
+ *---------------------------------------------------------------------*/
 void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, uint32_t sip, unsigned char* tha, uint32_t tip, unsigned int len) {
     assert(packet);
     assert(sha);
@@ -88,7 +95,7 @@ void write_arp_header(uint8_t* packet, unsigned short op, unsigned char* sha, ui
         memcpy(ahdr->ar_tha, tha, ETHER_ADDR_LEN);
     }
     ahdr->ar_tip = tip;
-}
+}  /* -- write_arp_header -- */
 
 void write_ip_icmp_header(uint8_t* packet, const sr_ip_hdr_t* old_ihdr, unsigned short type, unsigned short code, uint32_t ip_src, uint32_t ip_dst, unsigned int len){
     assert(packet);
@@ -144,8 +151,9 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
         fprintf(stderr, "unable to send ip packet: incompelet IP packet\n");
         return;
     }
+    sr_ip_hdr_t* ihdr = (sr_ip_hdr_t*)(buffer + sizeof(sr_ethernet_hdr_t));
+    struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), ihdr->ip_dst);
     struct sr_if* t_itf = sr_get_interface(sr, t_interface);
-    struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache), t_itf->ip);
     if (entry) {
         write_ethernet_header(buffer, entry->mac, t_itf->addr, ethertype_ip, len);
         sr_send_packet(sr, buffer, len, t_interface);
@@ -154,7 +162,7 @@ void send_ip_packet(struct sr_instance* sr, uint8_t* buffer, unsigned int len, c
     else {
         uint8_t empty[6] = {0};
         write_ethernet_header(buffer, empty, t_itf->addr, ethertype_ip, len);
-        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), t_itf->ip, buffer, len, s_interface);
+        struct sr_arpreq* req = sr_arpcache_queuereq(&(sr->cache), ihdr->ip_dst, buffer, len, s_interface);
         handle_arpreq(sr, req);
     }
 }
